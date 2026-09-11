@@ -1,0 +1,11 @@
+pandas
+faker
+streamlit
+python-dotenv
+openai
+chromadb
+tiktoken
+numpy
+pydantic
+pyyaml
+pytest
