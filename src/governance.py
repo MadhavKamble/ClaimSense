@@ -36,8 +36,10 @@ def redact_pii(text: str, customer_name: str | None = None) -> str:
 
     if customer_name:
         # Redact the literal name if it appears in free text (e.g. claim descriptions
-        # that mention the claimant's name directly)
-        redacted = re.sub(re.escape(customer_name), "[REDACTED-NAME]", redacted, flags=re.IGNORECASE)
+        # that mention the claimant's name directly). Word boundaries (\b) keep this
+        # from matching the name as a substring of an unrelated word (e.g. redacting
+        # "Ann" inside "Annual" and corrupting it into "[REDACTED-NAME]ual").
+        redacted = re.sub(r"\b" + re.escape(customer_name) + r"\b", "[REDACTED-NAME]", redacted, flags=re.IGNORECASE)
 
     return redacted
 
