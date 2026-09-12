@@ -69,7 +69,7 @@ def analyze_calibration_from_claims(claims: list[dict]):
 
     verdict = _interpret(results, weighted_error)
 
-    return {"buckets": results, "weighted_calibration_error": round(weighted_error, 3) if weighted_error else None, "verdict": verdict}
+    return {"buckets": results, "weighted_calibration_error": round(weighted_error, 3) if weighted_error is not None else None, "verdict": verdict}
 
 
 def analyze_calibration():
