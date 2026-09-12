@@ -146,12 +146,3 @@ Full pipeline run against real LLM output (`gpt-4o-mini`), 80 synthetic claims, 
 **Calibration verdict:** Well-calibrated (weighted error = 0.038) — the model's stated confidence closely tracks its actual accuracy, so it's reasonable to use it as a routing signal here.
 
 **Discussion:** Travel is the clear weak spot (68.8%), which directly traces back to the deliberately ambiguous "rental car damage while traveling" claims in the synthetic data — wording that genuinely overlaps Auto and Travel policy language. Renters' 90.5% likewise reflects the intentional Home/Renters water-damage ambiguity. These aren't random errors; they're the classifier failing exactly where a human adjuster would also need judgment, which is the point of including ambiguous data in the first place.
-
-## What I'd improve for production
-
-- Batch/async LLM calls for throughput
-- Caching repeated RAG queries
-- If calibration analysis shows overconfidence (see `src/calibration.py`), switch routing decisions to use measured per-class accuracy from `evaluate.py` instead of the LLM's raw stated confidence
-- Real OCR pipeline for scanned claim documents instead of synthetic text
-- Proper secrets management instead of `.env`
-- CI pipeline running `pytest` automatically on every push
