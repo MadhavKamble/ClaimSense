@@ -12,19 +12,19 @@ trust a black box):
   - claim_amount > threshold(policy)  -> Escalate       (high value, needs human sign-off regardless of confidence)
   - urgency == "High"                 -> Escalate       (safety/time-sensitive, always human-reviewed)
   - otherwise                         -> Auto-Approve
+
+Run: python -m src.routing   (needs the project root on the path, since this
+module now reads its thresholds from config.yaml via config.CONFIG)
 """
+
+from config import CONFIG
 
 # Amount thresholds above which a claim always gets escalated for human review,
 # regardless of AI confidence. Tuned per policy type since claim sizes differ a lot.
-ESCALATION_THRESHOLDS = {
-    "Auto": 8000,
-    "Home": 15000,
-    "Health": 10000,
-    "Travel": 2000,
-    "Renters": 5000,
-}
+# Read from config.yaml so changing a threshold doesn't require touching this file.
+ESCALATION_THRESHOLDS = CONFIG["routing"]["escalation_thresholds"]
 
-CONFIDENCE_FLOOR = 0.6
+CONFIDENCE_FLOOR = CONFIG["routing"]["confidence_floor"]
 
 
 def route_claim(policy_type: str, claim_amount: float, urgency: str, confidence: float) -> dict:
