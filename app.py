@@ -44,40 +44,58 @@ with tab1:
 
         if st.button(f"Run AI pipeline on {len(unprocessed)} unprocessed claims") and len(unprocessed) > 0:
             progress = st.progress(0)
+            failures = []
             for i, row in enumerate(unprocessed.itertuples()):
-                # 1. Classify + summarize
-                ai_result = process_claim(row.claim_id, row.claim_description)
+                # Each claim is isolated in its own try/except — mirrors
+                # pipeline.py's per-claim fault isolation, so one failure
+                # (a rate limit, a malformed response) can't crash the whole
+                # batch or leave the run stuck mid-way with no explanation.
+                try:
+                    # 1. Classify + summarize
+                    ai_result = process_claim(row.claim_id, row.claim_description)
 
-                # 2. Route (hybrid rules + AI confidence)
-                routing = route_claim(
-                    policy_type=ai_result["predicted_type"],
-                    claim_amount=row.claim_amount,
-                    urgency=ai_result["urgency"],
-                    confidence=ai_result["classification_confidence"],
-                )
+                    # 2. Route (hybrid rules + AI confidence)
+                    routing = route_claim(
+                        policy_type=ai_result["predicted_type"],
+                        claim_amount=row.claim_amount,
+                        urgency=ai_result["urgency"],
+                        confidence=ai_result["classification_confidence"],
+                    )
 
-                # 3. Persist AI outputs to the claim record
-                update_claim_ai_fields(
-                    row.claim_id,
-                    predicted_type=ai_result["predicted_type"],
-                    urgency=ai_result["urgency"],
-                    classification_confidence=ai_result["classification_confidence"],
-                    summary=ai_result["summary"],
-                    routing_decision=routing["decision"],
-                )
+                    # 3. Persist AI outputs to the claim record
+                    update_claim_ai_fields(
+                        row.claim_id,
+                        predicted_type=ai_result["predicted_type"],
+                        urgency=ai_result["urgency"],
+                        classification_confidence=ai_result["classification_confidence"],
+                        summary=ai_result["summary"],
+                        routing_decision=routing["decision"],
+                    )
 
-                # 4. Governed audit logging (PII-redacted before it's ever written)
-                log_governed_event(
-                    claim_id=row.claim_id,
-                    event_type="routing_decision",
-                    event_detail=routing["reason"],
-                    confidence=ai_result["classification_confidence"],
-                    customer_name=getattr(row, "customer_name", None),
-                )
+                    # 4. Governed audit logging (PII-redacted before it's ever written)
+                    log_governed_event(
+                        claim_id=row.claim_id,
+                        event_type="routing_decision",
+                        event_detail=routing["reason"],
+                        confidence=ai_result["classification_confidence"],
+                        customer_name=getattr(row, "customer_name", None),
+                    )
+                except Exception as e:
+                    failures.append(row.claim_id)
+                    update_claim_ai_fields(row.claim_id, routing_decision="Processing-Failed")
+                    log_governed_event(
+                        claim_id=row.claim_id,
+                        event_type="processing_failure",
+                        event_detail=f"AI pipeline failed for this claim: {e}",
+                        customer_name=getattr(row, "customer_name", None),
+                    )
 
                 progress.progress((i + 1) / len(unprocessed))
 
-            st.success("Pipeline run complete — refresh below to see results.")
+            if failures:
+                st.warning(f"Pipeline run complete — {len(failures)} claim(s) failed and were tagged Processing-Failed: {', '.join(failures)}")
+            else:
+                st.success("Pipeline run complete — refresh below to see results.")
             st.rerun()
 
         display_cols = [

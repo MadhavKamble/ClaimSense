@@ -106,6 +106,12 @@ def stage_process_and_route():
             # exception-handling workflow would use.
             logger.error(f"[Process] Failed on {claim['claim_id']}: {e}")
             update_claim_ai_fields(claim["claim_id"], routing_decision="Processing-Failed")
+            log_governed_event(
+                claim_id=claim["claim_id"],
+                event_type="processing_failure",
+                event_detail=f"AI pipeline failed for this claim: {e}",
+                customer_name=claim.get("customer_name"),
+            )
 
     logger.info("[Process] AI pipeline + routing complete")
 
