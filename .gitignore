@@ -7,3 +7,4 @@ chroma_store/
 logs/
 .pytest_cache/
 .DS_Store
+CLAUDE.md

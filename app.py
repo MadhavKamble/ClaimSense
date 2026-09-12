@@ -23,8 +23,8 @@ from src.routing import route_claim
 from src.governance import log_governed_event
 from src.rag import answer_policy_question
 
-st.set_page_config(page_title="Claims Intelligence Assistant", layout="wide")
-st.title("Claims Intelligence Assistant")
+st.set_page_config(page_title="ClaimSense", layout="wide")
+st.title("ClaimSense")
 st.caption("AI-powered claims triage: classification, summarization, RAG policy Q&A, and hybrid automation routing.")
 
 tab1, tab2, tab3 = st.tabs(["Claims Intake", "Policy Q&A", "Metrics"])

@@ -1,4 +1,4 @@
-# Claims Intelligence Assistant
+# ClaimSense
 
 An AI-powered claims triage system that validates, classifies, summarizes, and routes insurance claims using a hybrid rules+AI engine — with RAG-based policy Q&A, full audit logging, PII redaction, automated tests, and measured accuracy against ground truth.
 
@@ -76,7 +76,7 @@ Every stage is independently runnable and independently testable. A failure on o
 ## Project Structure
 
 ```
-claims-intelligence-assistant/
+ClaimSense/
 ├── README.md
 ├── requirements.txt
 ├── config.yaml                # all tunable values
@@ -129,7 +129,23 @@ Run with Docker: `docker build -t claims-assistant . && docker run -p 8501:8501 
 
 ## Results
 
-_(fill in after a full pipeline run — `python -m src.pipeline` prints overall accuracy, per-class accuracy, and routing breakdown directly)_
+Full pipeline run against real LLM output (`gpt-4o-mini`), 80 synthetic claims, 10% deliberately ambiguous:
+
+**Overall classification accuracy: 91.2%** (73/80 correct), average self-reported confidence: 0.875
+
+| Policy Type | n | Correct | Accuracy |
+|---|---|---|---|
+| Home | 13 | 13 | 100% |
+| Auto | 19 | 19 | 100% |
+| Health | 11 | 11 | 100% |
+| Renters | 21 | 19 | 90.5% |
+| Travel | 16 | 11 | 68.8% |
+
+**Routing breakdown:** 36 Auto-Approve, 44 Escalate, 0 Request-Info
+
+**Calibration verdict:** Well-calibrated (weighted error = 0.038) — the model's stated confidence closely tracks its actual accuracy, so it's reasonable to use it as a routing signal here.
+
+**Discussion:** Travel is the clear weak spot (68.8%), which directly traces back to the deliberately ambiguous "rental car damage while traveling" claims in the synthetic data — wording that genuinely overlaps Auto and Travel policy language. Renters' 90.5% likewise reflects the intentional Home/Renters water-damage ambiguity. These aren't random errors; they're the classifier failing exactly where a human adjuster would also need judgment, which is the point of including ambiguous data in the first place.
 
 ## What I'd improve for production
 
